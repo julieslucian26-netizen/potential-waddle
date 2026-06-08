@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vault — Smart Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg: #f5f3ee;
+  --surface: #ffffff;
+  --card: #faf9f6;
+  --dark: #1a1a14;
+  --accent: #c8f04b;
+  --accent2: #4b7cf0;
+  --red: #f04b4b;
+  --muted: #9a9a8a;
+  --border: #e8e5dc;
+  --text: #2a2a1f;
+  --shadow: 0 2px 20px rgba(26,26,20,0.08);
+}
+
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* LAYOUT */
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+  padding-bottom: 90px;
+}
+
+/* TOP BAR */
+.topbar {
+  padding: 52px 24px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dark);
+  letter-spacing: -0.5px;
+}
+
+.logo span {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--dark);
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  text-align: center;
+  line-height: 24px;
+  font-size: 14px;
+  margin-right: 6px;
+}
+
+.month-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* BALANCE HERO */
+.balance-hero {
+  margin: 0 20px 20px;
+  background: var(--dark);
+  border-radius: 24px;
+  padding: 28px 28px 24px;
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.5s ease both;
+}
+
+.balance-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(200,240,75,0.18), transparent 70%);
+  pointer-events: none;
+}
+
+.balance-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 8px;
+}
+
+.balance-amount {
+  font-family: 'Syne', sans-serif;
+  font-size: 48px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -2px;
+  line-height: 1;
+  margin-bottom: 24px;
+}
+
+.balance-amount span {
+  font-size: 24px;
+  opacity: 0.5;
+  font-weight: 600;
+}
+
+.balance-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.balance-stat {
+  background: rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.balance-stat .bs-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.balance-stat .bs-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.bs-val.income { color: var(--accent); }
+.bs-val.expense { color: #ff7e7e; }
+
+/* BUDGET BAR */
+.budget-section {
+  margin: 0 20px 20px;
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  animation: slideUp 0.5s 0.1s ease both;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-title .sub {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.cat-item {
+  margin-bottom: 14px;
+}
+
+.cat-item:last-child { margin-bottom: 0; }
+
+.cat-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.cat-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cat-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+
+.cat-amounts {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.cat-amounts strong { color: var(--text); font-weight: 600; }
+
+.bar-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 1s cubic-bezier(.4,0,.2,1);
+}
+
+/* ADD BUTTON AREA */
+.add-section {
+  margin: 0 20px 20px;
+  animation: slideUp 0.5s 0.2s ease both;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.add-form {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 22px;
+  border: 1px solid var(--border);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+
+.form-field input,
+.form-field select {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+  width: 100%;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  border-color: var(--dark);
+}
+
+.form-field.full { grid-column: 1 / -1; }
+
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 13px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+  letter-spacing: 0.3px;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-income {
+  background: var(--accent);
+  color: var(--dark);
+}
+
+.btn-expense {
+  background: var(--dark);
+  color: white;
+}
+
+/* TRANSACTIONS */
+.tx-section {
+  margin: 0 20px;
+  animation: slideUp 0.5s 0.3s ease both;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.tx-list { display: flex; flex-direction: column; gap: 8px; }
+
+.tx-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: transform 0.15s;
+  animation: popIn 0.3s ease both;
+}
+
+.tx-item:active { transform: scale(0.98); }
+
+.tx-emoji {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.tx-info { flex: 1; min-width: 0; }
+
+.tx-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.tx-cat {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.tx-amount {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.tx-amount.pos { color: #2d8a4e; }
+.tx-amount.neg { color: var(--red); }
+
+.tx-delete {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.3;
+  padding: 4px;
+  transition: opacity 0.2s;
+  line-height: 1;
+}
+
+.tx-delete:hover { opacity: 0.8; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}
+
+.empty-state .big { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; line-height: 1.6; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding: 12px 20px 24px;
+  display: flex;
+  justify-content: space-around;
+  z-index: 100;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px 16px;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+
+.nav-btn.active { background: var(--accent); }
+.nav-btn .nav-icon { font-size: 20px; }
+.nav-btn .nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.nav-btn.active .nav-label { color: var(--dark); }
+
+/* PREMIUM BANNER */
+.premium-banner {
+  margin: 0 20px 20px;
+  background: linear-gradient(135deg, var(--dark) 0%, #2d3a1a 100%);
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  animation: slideUp 0.5s 0.15s ease both;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.premium-text h4 {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+.premium-text p {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+}
+
+.premium-btn {
+  background: var(--accent);
+  color: var(--dark);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--dark);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ANIMATIONS */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo"><span>V</span>Vault</div>
+    <button class="month-btn" id="monthBtn">📅 <span id="monthLabel"></span></button>
+  </div>
+
+  <!-- BALANCE HERO -->
+  <div class="balance-hero">
+    <div class="balance-label">Total Balance</div>
+    <div class="balance-amount" id="balanceDisplay"><span>$</span><span id="balanceNum">0.00</span></div>
+    <div class="balance-row">
+      <div class="balance-stat">
+        <div class="bs-label">Income</div>
+        <div class="bs-val income" id="incomeDisplay">$0.00</div>
+      </div>
+      <div class="balance-stat">
+        <div class="bs-label">Spent</div>
+        <div class="bs-val expense" id="expenseDisplay">$0.00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div class="budget-section">
+    <div class="section-title">Spending by Category <span class="sub" id="txCount">0 transactions</span></div>
+    <div id="catBreakdown">
+      <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Add transactions to see breakdown</div>
+    </div>
+  </div>
+
+  <!-- PREMIUM -->
+  <div class="premium-banner">
+    <div class="premium-text">
+      <h4>✦ Upgrade to Pro</h4>
+      <p>Unlimited history, export CSV, AI insights</p>
+    </div>
+    <button class="premium-btn" onclick="showToast('Coming soon! 🚀')">$4.99/mo</button>
+  </div>
+
+  <!-- ADD TRANSACTION -->
+  <div class="add-section">
+    <div class="add-form">
+      <div class="section-title">Add Transaction</div>
+      <div class="form-row">
+        <div class="form-field full">
+          <label>Description</label>
+          <input type="text" id="txDesc" placeholder="e.g. Grocery run" maxlength="40">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Amount ($)</label>
+          <input type="number" id="txAmt" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="form-field">
+          <label>Category</label>
+          <select id="txCat">
+            <option value="Food">🍔 Food</option>
+            <option value="Transport">🚗 Transport</option>
+            <option value="Bills">💡 Bills</option>
+            <option value="Shopping">🛍️ Shopping</option>
+            <option value="Health">💊 Health</option>
+            <option value="Fun">🎉 Fun</option>
+            <option value="Savings">💰 Savings</option>
+            <option value="Other">📦 Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-income" onclick="addTx('income')">+ Income</button>
+        <button class="btn btn-expense" onclick="addTx('expense')">− Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS LIST -->
+  <div class="tx-section">
+    <div class="section-title" style="margin-bottom:14px;">
+      Recent Transactions
+      <span class="sub" style="cursor:pointer;color:var(--red)" onclick="clearAll()">Clear all</span>
+    </div>
+    <div class="tx-list" id="txList">
+      <div class="empty-state">
+        <div class="big">💸</div>
+        <p>No transactions yet.<br>Add your first income or expense above!</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="showToast('You're on Dashboard 📊')">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Dashboard</span>
+  </button>
+  <button class="nav-btn" onclick="showToast('Analytics coming in Pro! 📈')">
+    <span class="nav-icon">📈</span>
+    <span class="nav-label">Analytics</span>
+  </button>
+  <button class="nav-btn" onclick="showToast('Goals feature in Pro! 🎯')">
+    <span class="nav-icon">🎯</span>
+    <span class="nav-label">Goals</span>
+  </button>
+  <button class="nav-btn" onclick="showToast('Settings coming soon ⚙️')">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">Settings</span>
+  </button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// State
+let transactions = JSON.parse(localStorage.getItem('vault_txs') || '[]');
+
+const catConfig = {
+  Food:      { icon:'🍔', color:'#f0a04b', bg:'rgba(240,160,75,0.12)' },
+  Transport: { icon:'🚗', color:'#4b7cf0', bg:'rgba(75,124,240,0.12)' },
+  Bills:     { icon:'💡', color:'#f0e04b', bg:'rgba(240,224,75,0.12)' },
+  Shopping:  { icon:'🛍️', color:'#c04bf0', bg:'rgba(192,75,240,0.12)' },
+  Health:    { icon:'💊', color:'#f04b7a', bg:'rgba(240,75,122,0.12)' },
+  Fun:       { icon:'🎉', color:'#4bf0c8', bg:'rgba(75,240,200,0.12)' },
+  Savings:   { icon:'💰', color:'#c8f04b', bg:'rgba(200,240,75,0.12)' },
+  Other:     { icon:'📦', color:'#a0a090', bg:'rgba(160,160,144,0.12)' },
+  Income:    { icon:'💵', color:'#c8f04b', bg:'rgba(200,240,75,0.12)' },
+};
+
+// Set month label
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('monthLabel').textContent = months[new Date().getMonth()] + ' ' + new Date().getFullYear();
+
+function save() {
+  localStorage.setItem('vault_txs', JSON.stringify(transactions));
+}
+
+function addTx(type) {
+  const desc = document.getElementById('txDesc').value.trim();
+  const amt  = parseFloat(document.getElementById('txAmt').value);
+  const cat  = document.getElementById('txCat').value;
+
+  if (!desc) { showToast('⚠️ Please enter a description'); return; }
+  if (!amt || amt <= 0) { showToast('⚠️ Please enter a valid amount'); return; }
+
+  const tx = {
+    id: Date.now(),
+    desc,
+    amount: amt,
+    category: type === 'income' ? 'Income' : cat,
+    type,
+    date: new Date().toLocaleDateString()
+  };
+
+  transactions.unshift(tx);
+  save();
+  render();
+
+  document.getElementById('txDesc').value = '';
+  document.getElementById('txAmt').value = '';
+  showToast(type === 'income' ? '✅ Income added!' : '✅ Expense added!');
+}
+
+function deleteTx(id) {
+  transactions = transactions.filter(t => t.id !== id);
+  save();
+  render();
+  showToast('🗑️ Removed');
+}
+
+function clearAll() {
+  if (transactions.length === 0) return;
+  if (confirm('Clear all transactions?')) {
+    transactions = [];
+    save();
+    render();
+    showToast('🗑️ All cleared');
+  }
+}
+
+function render() {
+  const income  = transactions.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0);
+  const expense = transactions.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0);
+  const balance = income - expense;
+
+  document.getElementById('balanceNum').textContent = fmt(balance);
+  document.getElementById('incomeDisplay').textContent = '$' + fmt(income);
+  document.getElementById('expenseDisplay').textContent = '$' + fmt(expense);
+  document.getElementById('txCount').textContent = transactions.length + ' transaction' + (transactions.length !== 1 ? 's' : '');
+
+  // Categories
+  const catTotals = {};
+  transactions.filter(t => t.type === 'expense').forEach(t => {
+    catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
+  });
+  const maxCat = Math.max(...Object.values(catTotals), 1);
+  const catHTML = Object.keys(catTotals).length === 0
+    ? '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Add expenses to see breakdown</div>'
+    : Object.entries(catTotals).sort((a,b) => b[1]-a[1]).map(([cat, total]) => {
+        const cfg = catConfig[cat] || catConfig.Other;
+        const pct = Math.round((total / maxCat) * 100);
+        return `
+          <div class="cat-item">
+            <div class="cat-top">
+              <div class="cat-name">
+                <div class="cat-icon" style="background:${cfg.bg}">${cfg.icon}</div>
+                ${cat}
+              </div>
+              <div class="cat-amounts"><strong>$${fmt(total)}</strong></div>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${pct}%;background:${cfg.color}"></div>
+            </div>
+          </div>`;
+      }).join('');
+  document.getElementById('catBreakdown').innerHTML = catHTML;
+
+  // Transactions
+  const listEl = document.getElementById('txList');
+  if (transactions.length === 0) {
+    listEl.innerHTML = `<div class="empty-state"><div class="big">💸</div><p>No transactions yet.<br>Add your first income or expense above!</p></div>`;
+    return;
+  }
+  listEl.innerHTML = transactions.slice(0, 20).map(t => {
+    const cfg = catConfig[t.category] || catConfig.Other;
+    const sign = t.type === 'income' ? '+' : '−';
+    const cls  = t.type === 'income' ? 'pos' : 'neg';
+    return `
+      <div class="tx-item">
+        <div class="tx-emoji" style="background:${cfg.bg}">${cfg.icon}</div>
+        <div class="tx-info">
+          <div class="tx-name">${esc(t.desc)}</div>
+          <div class="tx-cat">${t.category} · ${t.date}</div>
+        </div>
+        <div class="tx-amount ${cls}">${sign}$${fmt(t.amount)}</div>
+        <button class="tx-delete" onclick="deleteTx(${t.id})">✕</button>
+      </div>`;
+  }).join('');
+}
+
+function fmt(n) {
+  return Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// Seed demo data if empty
+if (transactions.length === 0) {
+  const demo = [
+    { id:1, desc:'Salary', amount:3200, category:'Income', type:'income', date: new Date().toLocaleDateString() },
+    { id:2, desc:'Grocery shopping', amount:85.50, category:'Food', type:'expense', date: new Date().toLocaleDateString() },
+    { id:3, desc:'Netflix', amount:15.99, category:'Fun', type:'expense', date: new Date().toLocaleDateString() },
+    { id:4, desc:'Electricity bill', amount:110, category:'Bills', type:'expense', date: new Date().toLocaleDateString() },
+    { id:5, desc:'Gym membership', amount:35, category:'Health', type:'expense', date: new Date().toLocaleDateString() },
+  ];
+  transactions = demo;
+  save();
+}
+
+render();
+</script>
+</body>
+</html>
